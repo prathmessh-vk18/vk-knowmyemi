@@ -1,0 +1,9 @@
+{
+  "name": "knowmyemi",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

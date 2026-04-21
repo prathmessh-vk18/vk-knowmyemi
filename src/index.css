@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── shadcn/ui HSL tokens (required by component library) ── */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 214 32% 91%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* ── Brand tokens (hero-with-mockup) ── */
+    --brand: 217 91% 60%;
+    --brand-foreground: 213 100% 60%;
+
+    /* ── Financial semantic tokens ── */
+    --principal: 160 60% 45%;
+    --principal-foreground: 160 60% 98%;
+    --interest: 12 80% 60%;
+    --interest-foreground: 12 80% 98%;
+    --savings: 160 60% 45%;
+    --savings-foreground: 160 60% 12%;
+    --highlight: 45 93% 58%;
+    --highlight-foreground: 45 93% 12%;
+    --surface-sunken: 220 20% 95%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 214 32% 91%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* ── Design System color tokens (MASTER.md) ── */
+    --surface: #F8FAFC;
+    --surface-elevated: #FFFFFF;
+    --border-subtle: #F1F5F9;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --color-primary: #2563EB;
+    --color-primary-hover: #1D4ED8;
+    --color-primary-light: #EFF6FF;
+    --color-success: #059669;
+    --color-success-light: #ECFDF5;
+    --color-warning: #D97706;
+    --color-warning-light: #FFFBEB;
+    --color-danger: #DC2626;
+    --color-danger-light: #FEF2F2;
+
+    /* ── Spacing system ── */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    --space-3xl: 64px;
+
+    /* ── Shadow depths ── */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08);
+
+    /* ── Animation tokens ── */
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Design System OLED Dark Theme - Professional Fintech */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 240 5% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 5% 26%;
+    --secondary-foreground: 0 0% 90%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 217 91% 60%;
+
+    --brand: 217 91% 60%;
+    --brand-foreground: 213 100% 60%;
+
+    --principal: 217 91% 60%;
+    --principal-foreground: 0 0% 98%;
+    --interest: 25 95% 53%;
+    --interest-foreground: 0 0% 98%;
+    --savings: 142 76% 36%;
+    --savings-foreground: 0 0% 98%;
+    --highlight: 45 93% 58%;
+    --highlight-foreground: 0 0% 10%;
+    --surface-elevated: 0 0% 7%;
+    --surface-sunken: 0 0% 2%;
+
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .font-mono {
+    font-family: 'IBM Plex Sans', monospace;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card border border-border;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+  }
+
+  .glass-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  .glow-principal {
+    box-shadow: 0 0 20px hsl(var(--principal) / 0.2), 0 0 40px hsl(var(--principal) / 0.1);
+  }
+
+  .glow-interest {
+    box-shadow: 0 0 20px hsl(var(--interest) / 0.2), 0 0 40px hsl(var(--interest) / 0.1);
+  }
+
+  .text-gradient-hero {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+  }
+
+  .text-gradient-savings {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--principal)), hsl(var(--highlight)));
+  }
+}
+
+/* Respect prefers-reduced-motion (HIGH severity — MASTER.md) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
