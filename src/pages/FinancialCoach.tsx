@@ -89,6 +89,7 @@ function AnimNum({ value }: { value: number }) {
 /* ─────────── stepper ─────────── */
 interface StepperProps {
   label: string;
+  subtitle?: string;
   value: number;
   onChange: (v: number) => void;
   min?: number;
@@ -96,7 +97,7 @@ interface StepperProps {
   step?: number;
   color?: string;
 }
-function AllocationStepper({ label, value, onChange, min = 0, max = 999999, step = 500, color = "#3B82F6" }: StepperProps) {
+function AllocationStepper({ label, subtitle, value, onChange, min = 0, max = 999999, step = 500, color = "#3B82F6" }: StepperProps) {
   const [editing, setEditing] = useState(false);
   const [raw, setRaw] = useState("");
 
@@ -104,7 +105,10 @@ function AllocationStepper({ label, value, onChange, min = 0, max = 999999, step
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-2">
         <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-slate-700">{label}</span>
+          {subtitle && <span className="text-[10px] text-slate-400 font-medium leading-tight">{subtitle}</span>}
+        </div>
       </div>
       <div className="flex items-center gap-1.5">
         <button
@@ -191,10 +195,9 @@ export default function FinancialCoach() {
   const emi = urlEmi > 0 && !loanOpen ? urlEmi : calcedEmi;
 
   // Financial inputs
-   const [income, setIncome] = useState(80000);
+  const [income, setIncome] = useState(80000);
   const [expenses, setExpenses] = useState(32000);
-  const [otherOutgoings, setOtherOutgoings] = useState(0);
-  const [investments, setInvestments] = useState(10000);
+  const [obligations, setObligations] = useState(10000);
   const [emergencyFund, setEmergencyFund] = useState("3-6");
   const [riskAppetite, setRiskAppetite] = useState("Balanced");
   const [salaryGrowth, setSalaryGrowth] = useState("Medium (5-10%)");
@@ -206,8 +209,8 @@ export default function FinancialCoach() {
 
   /* ── engine ── */
   const engine = useMemo(() => {
-    const totalOut = expenses + otherOutgoings + investments + emi;
-    const expensePct = Math.round(((expenses + otherOutgoings) / income) * 100);
+    const totalOut = expenses + obligations + emi;
+    const expensePct = Math.round(((expenses + obligations) / income) * 100);
     const freeCash = income - totalOut;
     const isNegative = freeCash <= 0;
 
@@ -408,6 +411,7 @@ export default function FinancialCoach() {
                   <div className="space-y-5">
                     <LabeledSlider
                       label="Monthly Income"
+                      subtitle="Salary, Rental Income, and others"
                       display={fmt(income)}
                       badge={`₹${Math.round(income / 1000)}K`}
                       value={income}
@@ -416,35 +420,26 @@ export default function FinancialCoach() {
                       <Slider value={[income]} min={20000} max={500000} step={1000} onValueChange={([v]) => setIncome(v)} />
                     </LabeledSlider>
                     
-                    {/* EXPENSES with examples */}
                     <LabeledSlider
-                      label="Monthly Expenses (Rent, Groceries, Bills etc.)"
+                      label="Monthly Expenses"
+                      subtitle="Rent, Groceries, Bills, etc."
                       display={fmt(expenses)}
-                      badge={`${Math.round(((expenses + otherOutgoings) / income) * 100)}% of income`}
+                      badge={`${Math.round(((expenses + obligations) / income) * 100)}% of income`}
                       value={expenses}
                       onDirectChange={setExpenses}
                     >
                       <Slider value={[expenses]} min={1000} max={300000} step={1000} onValueChange={([v]) => setExpenses(v)} />
                     </LabeledSlider>
 
-                    {/* NEW Other Outgoings */}
                     <LabeledSlider
-                      label="Other Monthly Obligations (EMIs, Subs etc.)"
-                      display={fmt(otherOutgoings)}
-                      value={otherOutgoings}
-                      onDirectChange={setOtherOutgoings}
+                      label="Monthly Obligations"
+                      subtitle="EMIs, Subscriptions, Insurance, etc."
+                      display={fmt(obligations)}
+                      badge={`${Math.round((obligations / income) * 100)}% of income`}
+                      value={obligations}
+                      onDirectChange={setObligations}
                     >
-                      <Slider value={[otherOutgoings]} min={0} max={200000} step={500} onValueChange={([v]) => setOtherOutgoings(v)} />
-                    </LabeledSlider>
-                    
-                    <LabeledSlider
-                      label="Monthly Investments"
-                      display={fmt(investments)}
-                      badge={`${Math.round((investments / income) * 100)}% of income`}
-                      value={investments}
-                      onDirectChange={setInvestments}
-                    >
-                      <Slider value={[investments]} min={0} max={100000} step={500} onValueChange={([v]) => setInvestments(v)} />
+                      <Slider value={[obligations]} min={0} max={100000} step={500} onValueChange={([v]) => setObligations(v)} />
                     </LabeledSlider>
                   </div>
 
@@ -880,14 +875,16 @@ function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; l
   );
 }
 
-function LabeledSlider({ label, display, badge, value, onDirectChange, children }: { label: string; display: string; badge?: string; value?: number; onDirectChange?: (v: number) => void; children: React.ReactNode }) {
+function LabeledSlider({ label, subtitle, display, badge, value, onDirectChange, children }: { label: string; subtitle?: string; display: string; badge?: string; value?: number; onDirectChange?: (v: number) => void; children: React.ReactNode }) {
   const [editing, setEditing] = useState(false);
   const [raw, setRaw] = useState("");
   
   return (
-    <div className="space-y-2">
       <div className="flex justify-between items-baseline">
-        <label className="text-sm font-semibold text-slate-800">{label}</label>
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-slate-800">{label}</label>
+          {subtitle && <p className="text-[11px] text-slate-400 font-medium leading-tight mt-0.5">{subtitle}</p>}
+        </div>
         <div className="flex items-center gap-2">
           {badge && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">{badge}</span>}
           {editing && onDirectChange ? (
