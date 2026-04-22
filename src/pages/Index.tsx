@@ -12,6 +12,7 @@ import { EMIHeroSection } from "@/components/EMIHeroSection";
 import { SEO } from "@/components/SEO";
 import { Calculator, ChevronDown, TableProperties, Lightbulb, HandCoins, ChartNoAxesColumn, TrendingDown } from "lucide-react";
 import { useState } from "react";
+import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 
 
@@ -30,23 +31,7 @@ const Index = () => {
       <SEO />
       <div className="min-h-screen bg-background">
         {/* Absolute Header */}
-        <header className="absolute top-0 w-full z-50 bg-transparent">
-        <div className="container max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <img src="/icon.png" alt="Know My EMI Logo" className="h-[56px] w-auto drop-shadow-sm" />
-            </motion.div>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="/" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">Home</a>
-            <a href="/financialcoach" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">Financial Coach</a>
-          </nav>
-
-        </div>
-      </header>
+        <Header />
 
       <EMIHeroSection
         onCalculateClick={() => scrollTo("calculate")}

@@ -7,6 +7,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { PayoffChart } from "@/components/PayoffChart";
 import confetti from "canvas-confetti";
+import { Header } from "@/components/Header";
 import {
   Pencil, ChevronLeft, Sparkles, TrendingUp, Shield, Info,
   AlertTriangle, Home, Wallet, Target, Lightbulb, ArrowRight,
@@ -313,20 +314,8 @@ export default function FinancialCoach() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5]">
-      {/* ── Navbar ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <img src="/icon.png" alt="Know My EMI" className="h-10 w-auto cursor-pointer" onClick={() => navigate("/")} />
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="/" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Home</a>
-            <a href="/financialcoach" className="text-sm font-semibold text-blue-600">Financial Coach</a>
-          </nav>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-[#F0F2F5] pt-20">
+      <Header />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Page title */}
         <div className="mb-6">
@@ -543,7 +532,7 @@ export default function FinancialCoach() {
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.4 }}
-                  className="absolute inset-0 z-20 flex flex-col items-center pt-16 text-center px-6 bg-white/50 backdrop-blur-[12px] border border-white/50 rounded-3xl overflow-hidden"
+                  className="absolute inset-0 z-20 flex flex-col items-center pt-16 text-center px-6 bg-slate-100/80 backdrop-blur-[16px] border border-slate-200 rounded-3xl overflow-hidden"
                 >
                   <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-w-sm">
                     <div className="mx-auto w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-5">
@@ -570,7 +559,7 @@ export default function FinancialCoach() {
               initial={false}
               animate={{ opacity: reportUnlocked ? 1 : 0.6 }}
               transition={{ duration: 0.5 }}
-              className={`bg-white rounded-3xl p-6 shadow-xl border border-slate-200 space-y-6 ${!reportUnlocked ? "pointer-events-none filter blur-[8px]" : ""}`}
+              className={`bg-white rounded-3xl p-6 shadow-2xl border-2 border-slate-200 space-y-6 ${!reportUnlocked ? "pointer-events-none filter blur-[8px]" : ""}`}
             >
 
               {/* header */}
