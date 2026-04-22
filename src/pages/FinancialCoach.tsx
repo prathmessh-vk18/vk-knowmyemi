@@ -263,11 +263,11 @@ export default function FinancialCoach() {
       freeCash, isNegative, remaining, expensePct, safetyLevel,
       bigMonthly, bigCapped, financialMode,
       allocLoanRaw: loanAllocRaw, allocInvestRaw: investAllocRaw, allocLifestyleRaw: lifestyleAllocRaw,
-      totalOutgoing: expenses + investments + emi,
+      totalOutgoing: expenses + obligations + emi,
       trustMsg,
       without: simulateLoan(principal, rate, emi, 0)
     };
-  }, [principal, rate, tenure, emi, income, expenses, investments, emergencyFund, riskAppetite, hasBigExpense, bigAmount, bigMonths]);
+  }, [principal, rate, tenure, emi, income, expenses, obligations, emergencyFund, riskAppetite, hasBigExpense, bigAmount, bigMonths]);
 
   // Overrideable allocations
   const [overrides, setOverrides] = useState<{ loan: number; invest: number; lifestyle: number } | null>(null);
@@ -880,6 +880,7 @@ function LabeledSlider({ label, subtitle, display, badge, value, onDirectChange,
   const [raw, setRaw] = useState("");
   
   return (
+    <div className="space-y-2">
       <div className="flex justify-between items-baseline">
         <div className="flex flex-col">
           <label className="text-sm font-semibold text-slate-800">{label}</label>
