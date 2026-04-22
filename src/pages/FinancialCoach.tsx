@@ -191,8 +191,9 @@ export default function FinancialCoach() {
   const emi = urlEmi > 0 && !loanOpen ? urlEmi : calcedEmi;
 
   // Financial inputs
-  const [income, setIncome] = useState(80000);
+   const [income, setIncome] = useState(80000);
   const [expenses, setExpenses] = useState(32000);
+  const [otherOutgoings, setOtherOutgoings] = useState(0);
   const [investments, setInvestments] = useState(10000);
   const [emergencyFund, setEmergencyFund] = useState("3-6");
   const [riskAppetite, setRiskAppetite] = useState("Balanced");
@@ -205,8 +206,9 @@ export default function FinancialCoach() {
 
   /* ── engine ── */
   const engine = useMemo(() => {
-    const expensePct = Math.round((expenses / income) * 100);
-    const freeCash = income - expenses - investments - emi;
+    const totalOut = expenses + otherOutgoings + investments + emi;
+    const expensePct = Math.round(((expenses + otherOutgoings) / income) * 100);
+    const freeCash = income - totalOut;
     const isNegative = freeCash <= 0;
 
     let bigMonthly = 0;
@@ -414,15 +416,25 @@ export default function FinancialCoach() {
                       <Slider value={[income]} min={20000} max={500000} step={1000} onValueChange={([v]) => setIncome(v)} />
                     </LabeledSlider>
                     
-                    {/* EXPENSES Independent limit up to 3L */}
+                    {/* EXPENSES with examples */}
                     <LabeledSlider
-                      label="Monthly Expenses"
+                      label="Monthly Expenses (Rent, Groceries, Bills etc.)"
                       display={fmt(expenses)}
-                      badge={`${Math.round((expenses / income) * 100)}% of income`}
+                      badge={`${Math.round(((expenses + otherOutgoings) / income) * 100)}% of income`}
                       value={expenses}
                       onDirectChange={setExpenses}
                     >
                       <Slider value={[expenses]} min={1000} max={300000} step={1000} onValueChange={([v]) => setExpenses(v)} />
+                    </LabeledSlider>
+
+                    {/* NEW Other Outgoings */}
+                    <LabeledSlider
+                      label="Other Monthly Obligations (EMIs, Subs etc.)"
+                      display={fmt(otherOutgoings)}
+                      value={otherOutgoings}
+                      onDirectChange={setOtherOutgoings}
+                    >
+                      <Slider value={[otherOutgoings]} min={0} max={200000} step={500} onValueChange={([v]) => setOtherOutgoings(v)} />
                     </LabeledSlider>
                     
                     <LabeledSlider
@@ -455,7 +467,7 @@ export default function FinancialCoach() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Future & Behavior</p>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium text-slate-800 mb-2">Emergency Fund (months)</p>
+                      <p className="text-sm font-medium text-slate-800 mb-2">How many months of savings do you have?</p>
                       <Chips options={["0-1", "1-3", "3-6", "6+"]} value={emergencyFund} onChange={setEmergencyFund} />
                     </div>
                     <div>
@@ -485,7 +497,10 @@ export default function FinancialCoach() {
               {activeStep >= 4 && (
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Upcoming Big Expense</p>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Upcoming Big Expense</p>
+                      <h4 className="text-sm font-black text-slate-900 tracking-tight">Planning for a major purchase?</h4>
+                    </div>
                     <button
                       onClick={() => setHasBigExpense(v => !v)}
                       className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${hasBigExpense ? "bg-blue-600" : "bg-slate-200"}`}
@@ -494,7 +509,7 @@ export default function FinancialCoach() {
                     </button>
                   </div>
                   <AnimatePresence>
-                    {hasBigExpense && (
+                    {hasBigExpense ? (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }} className="overflow-hidden"
@@ -513,11 +528,14 @@ export default function FinancialCoach() {
                           </div>
                         </div>
                       </motion.div>
+                    ) : (
+                      <div className="py-2 px-3 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <p className="text-[11px] font-medium text-slate-500 leading-relaxed italic">
+                          Toggle to plan for a wedding, car, travel, or any other major life purchase.
+                        </p>
+                      </div>
                     )}
                   </AnimatePresence>
-                  {!hasBigExpense && (
-                    <p className="text-xs text-slate-400">Toggle to plan for a wedding, car, travel, or any major purchase.</p>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
