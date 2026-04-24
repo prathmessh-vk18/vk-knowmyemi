@@ -966,16 +966,17 @@ export default function FinancialCoach() {
                               <p className={`text-[11px] font-bold leading-relaxed transition-colors ${engine.isSafetyBridge ? "text-red-700" : "text-orange-700"}`}>
                                 {engine.isSafetyBridge 
                                   ? `We've slowed this down to ${fmt(engine.bigMonthly)}/mo to build your safety net first. Safety is non-negotiable.` 
-                                  : `Save ${fmt(engine.bigMonthly)} every month for exactly ${bigMonths} months. (Total: ${fmt(Number(bigAmount) || 0)})`}
+                                  : (
+                                    <>
+                                      Save {fmt(engine.bigMonthly)} every month for exactly {bigMonths} months. You'll have ≈ {fmt(engine.bigMonthly * (parseInt(bigMonths) || 1))} ready.
+                                      { (engine.bigMonthly * (parseInt(bigMonths) || 1)) < Number(bigAmount) && (
+                                        <span className="block mt-1 opacity-80 font-medium italic">
+                                          ✨ Still a shortage of {fmt(Number(bigAmount) - (engine.bigMonthly * (parseInt(bigMonths) || 1)))} because pouring more than 60% isn't healthy!
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
                               </p>
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${engine.isSafetyBridge ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
-                                  Target: {fmt(Number(bigAmount) || 0)}
-                                </span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${engine.isSafetyBridge ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
-                                  Cap: 60% of Surplus
-                                </span>
-                              </div>
                             </div>
                           </div>
                         </div>
