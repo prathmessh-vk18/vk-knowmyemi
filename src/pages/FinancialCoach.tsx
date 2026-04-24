@@ -97,30 +97,27 @@ interface StepperProps {
   step?: number;
   color?: string;
 }
-function AllocationStepper({ label, subtitle, value, onChange, min = 0, max = 999999, step = 500, color = "#3B82F6" }: StepperProps) {
+function AllocationStepper({ label, value, onChange, min = 0, max = 999999, step = 500, color = "#3B82F6" }: StepperProps) {
   const [editing, setEditing] = useState(false);
   const [raw, setRaw] = useState("");
 
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
-        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-slate-700">{label}</span>
-          {subtitle && <span className="text-[10px] text-slate-400 font-medium leading-tight">{subtitle}</span>}
-        </div>
+    <div className="flex items-center justify-between py-3">
+      <div className="flex items-center gap-2.5">
+        <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+        <span className="text-sm font-bold text-slate-700">{label}</span>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-100">
         <button
           onClick={() => onChange(Math.max(min, value - step))}
-          className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center transition-all shadow-sm group"
         >
-          <Minus className="w-3 h-3 text-slate-600" />
+          <Minus className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
         </button>
         {editing ? (
           <input
             autoFocus
-            className="w-24 h-7 bg-white text-slate-900 text-xs text-center rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400"
+            className="w-24 h-8 bg-white text-slate-900 text-sm font-bold text-center rounded-lg border-none focus:ring-0 focus:outline-none"
             value={raw}
             onChange={e => setRaw(e.target.value)}
             onBlur={() => {
@@ -133,18 +130,49 @@ function AllocationStepper({ label, subtitle, value, onChange, min = 0, max = 99
         ) : (
           <button
             onClick={() => { setRaw(String(value)); setEditing(true); }}
-            className="w-24 h-7 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold text-xs text-center rounded-lg transition-colors tabular-nums"
+            className="w-24 h-8 text-slate-900 font-bold text-sm text-center tabular-nums"
           >
             ₹{value.toLocaleString("en-IN")}
           </button>
         )}
         <button
           onClick={() => onChange(Math.min(max, value + step))}
-          className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center transition-all shadow-sm group"
         >
-          <Plus className="w-3 h-3 text-slate-600" />
+          <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
         </button>
       </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, subtext }: { label: string; value: string; subtext: string }) {
+  return (
+    <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-xl font-black text-slate-900 tracking-tight">{value}</p>
+      <p className="text-[10px] text-slate-500 font-medium mt-1 leading-tight">{subtext}</p>
+    </div>
+  );
+}
+
+function CoachInsightCard({ insight }: { insight: string }) {
+  return (
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+      <div className="flex gap-4 items-start relative z-10">
+        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
+          <Lightbulb className="w-5 h-5 text-blue-600" />
+        </div>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+             COACH INSIGHT
+          </p>
+          <p className="text-sm font-bold text-blue-900 leading-relaxed max-w-2xl">
+            {insight}
+          </p>
+        </div>
+      </div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
     </div>
   );
 }
@@ -190,6 +218,7 @@ export default function FinancialCoach() {
   const [principal, setPrincipal] = useState(urlPrincipal);
   const [rate, setRate] = useState(urlRate);
   const [tenure, setTenure] = useState(urlTenure);
+  const [yearsPassed, setYearsPassed] = useState(0);
 
   const calcedEmi = useMemo(() => calcEMI(principal, rate, tenure), [principal, rate, tenure]);
   const emi = urlEmi > 0 && !loanOpen ? urlEmi : calcedEmi;
@@ -228,54 +257,96 @@ export default function FinancialCoach() {
     }
     const remaining = Math.max(0, freeCash - bigMonthly);
 
-    // Allocation base pcts
-    let lP = 30, iP = 40, liP = 30;
-    if (riskAppetite === "Conservative") { lP = 20; iP = 40; liP = 40; }
-    if (riskAppetite === "Aggressive") { lP = 50; iP = 30; liP = 20; }
-
-    // Safety adj
+    const remainingTenure = Math.max(0, tenure - yearsPassed);
+    const isLateStage = remainingTenure <= 3;
     const safetyLevel =
       emergencyFund === "6+" ? "HIGH" :
         emergencyFund === "3-6" ? "MEDIUM" : "LOW";
-    if (safetyLevel === "LOW") lP = Math.max(5, lP - 10);
-
-    const tot = lP + iP + liP;
-    const lPn = Math.round(lP / tot * 100);
-    const iPn = Math.round(iP / tot * 100);
-    const liPn = 100 - lPn - iPn;
-
-    const loanAllocRaw = Math.round(remaining * lPn / 100);
-    const investAllocRaw = Math.round(remaining * iPn / 100);
-    const lifestyleAllocRaw = remaining - loanAllocRaw - investAllocRaw;
 
     const financialMode =
       safetyLevel === "HIGH" && expensePct < 50 && (emi / income) < 0.4 ? "Strong" :
         safetyLevel !== "LOW" && expensePct <= 50 ? "Moderate" : "Weak";
 
+    const progressPct = (yearsPassed / tenure) * 100;
+    
+    // DECISION LOGIC: 4-Quarter Matrix
+    let emergencyP = 0, lP = 0, iP = 0;
+    let stageName = "";
+
+    if (safetyLevel === "LOW") {
+      stageName = "Safety First";
+      emergencyP = 80;
+      lP = 10;
+      iP = 10;
+    } else {
+      if (progressPct <= 25) {
+        stageName = "Q1: Interest Defense";
+        lP = riskAppetite === "Aggressive" ? 60 : 75;
+        iP = 100 - lP;
+        emergencyP = 0;
+      } else if (progressPct <= 50) {
+        stageName = "Q2: Balanced Growth";
+        lP = riskAppetite === "Aggressive" ? 40 : 50;
+        iP = 100 - lP;
+        emergencyP = 0;
+      } else if (progressPct <= 75) {
+        stageName = "Q3: Growth Pivot";
+        lP = riskAppetite === "Aggressive" ? 15 : 25;
+        iP = 100 - lP;
+        emergencyP = 0;
+      } else {
+        stageName = "Q4: Wealth Harvest";
+        lP = 0;
+        iP = 100;
+        emergencyP = 0;
+      }
+    }
+
+    // Apply MEDIUM safety adjustment (divert some to emergency)
+    if (safetyLevel === "MEDIUM" && progressPct <= 75) {
+       const diversion = 20;
+       emergencyP = diversion;
+       lP = Math.max(0, lP - (diversion / 2));
+       iP = Math.max(0, iP - (diversion / 2));
+    }
+
+    const emergencyAllocRaw = Math.round(remaining * (emergencyP / 100));
+    const loanAllocRaw = Math.round(remaining * (lP / 100));
+    const investAllocRaw = Math.round(remaining * (iP / 100));
+    const lifestyleAllocRaw = Math.max(0, remaining - emergencyAllocRaw - loanAllocRaw - investAllocRaw);
+
     const trustMsg =
       isNegative ? "Your current expenses exceed income. We can't optimize negative cash." :
         expensePct > 50 ? "You're burning over half your income just to exist. Enjoy the lifestyle, but your future self is going to have to work forever." :
-        safetyLevel === "LOW" ? "Build an emergency fund before trying to aggressively prepay debt." :
-          financialMode === "Strong" ? "Excellent financial position — this plan aggressively maximises your wealth." :
-            "Balanced approach — managing loan and lifestyle logically.";
+        safetyLevel === "LOW" ? "Your priority should be building an emergency fund. We've diverted your surplus there." :
+        progressPct > 75 ? "You're in the final stretch! Redirecting all surplus to wealth building as interest savings are now minimal." :
+        progressPct > 50 ? "Strategic Pivot: Interest costs are now lower than principal. Focusing heavily on equity growth." :
+          financialMode === "Strong" ? `Excellent position in ${stageName} phase. Balancing payoff and growth.` :
+            `Balanced approach for ${stageName} phase.`;
 
     return {
       freeCash, isNegative, remaining, expensePct, safetyLevel,
       bigMonthly, bigCapped, financialMode,
-      allocLoanRaw: loanAllocRaw, allocInvestRaw: investAllocRaw, allocLifestyleRaw: lifestyleAllocRaw,
+      remainingTenure, isLateStage, progressPct, stageName,
+      allocEmergencyRaw: emergencyAllocRaw,
+      allocLoanRaw: loanAllocRaw, 
+      allocInvestRaw: investAllocRaw, 
+      allocLifestyleRaw: lifestyleAllocRaw,
       totalOutgoing: expenses + obligations + emi,
       trustMsg,
       without: simulateLoan(principal, rate, emi, 0)
     };
-  }, [principal, rate, tenure, emi, income, expenses, obligations, emergencyFund, riskAppetite, hasBigExpense, bigAmount, bigMonths]);
+  }, [principal, rate, tenure, yearsPassed, emi, income, expenses, obligations, emergencyFund, riskAppetite, hasBigExpense, bigAmount, bigMonths]);
+
 
   // Overrideable allocations
-  const [overrides, setOverrides] = useState<{ loan: number; invest: number; lifestyle: number } | null>(null);
-  useEffect(() => { setOverrides(null); }, [engine.allocLoanRaw, engine.allocInvestRaw]);
+  const [overrides, setOverrides] = useState<{ loan: number; invest: number; emergency: number } | null>(null);
+  useEffect(() => { setOverrides(null); }, [engine.allocLoanRaw, engine.allocInvestRaw, engine.allocEmergencyRaw]);
 
   const allocLoan = overrides?.loan ?? engine.allocLoanRaw;
   const allocInvest = overrides?.invest ?? engine.allocInvestRaw;
-  const allocLifestyle = overrides?.lifestyle ?? engine.allocLifestyleRaw;
+  const allocEmergency = overrides?.emergency ?? engine.allocEmergencyRaw;
+  const allocLifestyle = Math.max(0, engine.remaining - allocLoan - allocInvest - allocEmergency);
 
   // React to sliders natively setting strategy
   const activeExtraEmi = Math.round(allocLoan * 0.7);
@@ -284,23 +355,73 @@ export default function FinancialCoach() {
   const interestSaved = engine.without.totalInterest - activeWithStrat.totalInterest;
   const tenureReduced = Math.round((engine.without.tenure - activeWithStrat.tenure) * 10) / 10;
 
-  const setAllocDirect = useCallback((key: "loan" | "invest" | "lifestyle", val: number) => {
-    const cur = overrides ?? { loan: engine.allocLoanRaw, invest: engine.allocInvestRaw, lifestyle: engine.allocLifestyleRaw };
+  const setAllocDirect = useCallback((key: "loan" | "invest" | "emergency", val: number) => {
+    const cur = overrides ?? { loan: engine.allocLoanRaw, invest: engine.allocInvestRaw, emergency: engine.allocEmergencyRaw };
     const diff = val - cur[key];
-    const otherKey = key === "lifestyle" ? "loan" : "lifestyle";
+    // Simple logic: subtract diff from the largest of the other two
+    const keys: ("loan" | "invest" | "emergency")[] = ["loan", "invest", "emergency"];
+    const otherKeys = keys.filter(k => k !== key);
+    const otherKey = cur[otherKeys[0]] > cur[otherKeys[1]] ? otherKeys[0] : otherKeys[1];
+    
     setOverrides({ ...cur, [key]: val, [otherKey]: Math.max(0, cur[otherKey] - diff) });
   }, [overrides, engine]);
 
-  const totalAlloc = allocLoan + allocInvest + allocLifestyle + engine.bigMonthly;
+  const totalAlloc = allocLoan + allocInvest + allocEmergency + engine.bigMonthly;
+
+  /* 12 month accumulation logic */
+  const accumulation = useMemo(() => {
+    const P = allocInvest;
+    if (P <= 0) return 0;
+    const r = 0.12; // 12% avg return
+    const i = r / 12;
+    const n = 12;
+    // FV = P * [((1 + i)^n - 1) / i] * (1 + i)
+    return Math.round(P * ((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+  }, [allocInvest]);
+
+  const RECOMMENDATIONS = [
+    {
+      name: "HDFC Top 100 Fund",
+      type: "MUTUAL FUND",
+      desc: "Invests in India's 100 biggest companies. Safe and steady.",
+      url: "https://www.indiabulls.com/mutual-funds/hdfc-top-100-fund"
+    },
+    {
+      name: "Parag Parikh Flexi Cap",
+      type: "MUTUAL FUND",
+      desc: "A smart mix of Indian leaders and global giants like Google/Microsoft.",
+      url: "https://www.indiabulls.com/mutual-funds/parag-parikh-flexi-cap"
+    },
+    {
+      name: "HDFC ELSS Fund",
+      type: "ELSS",
+      desc: "The tax-saver. Grow your money while reducing your income tax.",
+      url: "https://www.indiabulls.com/mutual-funds/hdfc-elss-tax-saver"
+    }
+  ];
+
+  function FundCard({ fund }: { fund: typeof RECOMMENDATIONS[0] }) {
+    return (
+      <a href={fund.url} target="_blank" rel="noopener noreferrer" className="block p-4 border border-slate-100 rounded-xl hover:border-blue-200 transition-colors bg-slate-50/50 hover:bg-blue-50/30">
+        <div className="flex justify-between items-start mb-1">
+          <h4 className="font-semibold text-slate-900 text-sm">{fund.name}</h4>
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{fund.type}</span>
+        </div>
+        <p className="text-xs text-slate-500">{fund.desc}</p>
+      </a>
+    );
+  }
 
   /* pie data */
   const PIE_COLORS = {
+    emergency: "#FBBF24",
     loan: "#22C55E",
     invest: "#3B82F6",
     lifestyle: "#EC4899",
     bigexp: "#F97316",
   };
   const pieData = [
+    { name: "Emergency Fund", value: allocEmergency, color: PIE_COLORS.emergency },
     { name: "Loan Prepayment", value: allocLoan, color: PIE_COLORS.loan },
     { name: "Investments", value: allocInvest, color: PIE_COLORS.invest },
     { name: "Lifestyle", value: allocLifestyle, color: PIE_COLORS.lifestyle },
@@ -362,6 +483,7 @@ export default function FinancialCoach() {
                       ["Loan Amount", fmt(principal)],
                       ["Interest Rate (p.a.)", `${rate}%`],
                       ["Tenure", `${tenure} years`],
+                      ["Years Passed", `${yearsPassed} years`],
                       ["EMI", fmt(emi)],
                     ].map(([l, v]) => (
                       <div key={l} className="flex justify-between items-center">
@@ -384,6 +506,9 @@ export default function FinancialCoach() {
                     </LabeledSlider>
                     <LabeledSlider label="Tenure (years)" display={`${tenure} yrs`} value={tenure} onDirectChange={setTenure}>
                       <Slider value={[tenure]} min={1} max={30} step={1} onValueChange={([v]) => setTenure(v)} />
+                    </LabeledSlider>
+                    <LabeledSlider label="Years Passed" display={`${yearsPassed} yrs`} value={yearsPassed} onDirectChange={setYearsPassed}>
+                      <Slider value={[yearsPassed]} min={0} max={tenure} step={1} onValueChange={([v]) => setYearsPassed(v)} />
                     </LabeledSlider>
                     <div className="flex justify-between items-center pt-1 border-t border-slate-100">
                       <span className="text-xs text-slate-400">Auto-calculated EMI</span>
@@ -577,7 +702,9 @@ export default function FinancialCoach() {
 
               {/* header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <h2 className="text-slate-900 font-extrabold text-xl">Your Smart Financial Strategy</h2>
+                <div>
+                  <h2 className="text-slate-900 font-extrabold text-xl">Your Smart Financial Strategy</h2>
+                </div>
                 <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${engine.financialMode === "Strong" ? "bg-green-100 text-green-700" :
                   engine.financialMode === "Moderate" ? "bg-yellow-100 text-yellow-700" :
                     "bg-red-100 text-red-700"
@@ -586,258 +713,209 @@ export default function FinancialCoach() {
                 </span>
               </div>
 
-              {/* ── ROW 1: Summary stats ── */}
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard
-                  icon={<Home className="w-5 h-5" />}
-                  label="Loan Balance"
-                  value={fmtL(principal)}
-                  sub={`${tenure} Years Left`}
-                  color="blue"
-                />
-                <StatCard
-                  icon={<Wallet className="w-5 h-5" />}
-                  label="Monthly Income"
-                  value={fmtL(income)}
-                  sub={`EMI: ${fmtL(emi)}`}
-                  color="green"
-                />
-                <StatCard
-                  icon={<Target className="w-5 h-5" />}
-                  label="Total Outgoing"
-                  value={fmtL(engine.totalOutgoing)}
-                  sub={`${Math.round((engine.totalOutgoing / income) * 100)}% of income`}
-                  color={engine.totalOutgoing > income * 0.7 ? "orange" : "purple"}
-                />
+              {/* ── ZONE 1: Summary Grid ── */}
+              <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <MetricCard
+                    label="Loan Balance"
+                    value={fmt(principal)}
+                    subtext={`${engine.remainingTenure} Years Left`}
+                  />
+                  <MetricCard
+                    label="Monthly Income"
+                    value={fmt(income)}
+                    subtext={`EMI: ${fmt(emi)}`}
+                  />
+                  <MetricCard
+                    label="Total Outgoing"
+                    value={fmt(engine.totalOutgoing)}
+                    subtext={`${Math.round((engine.totalOutgoing / income) * 100)}% of income`}
+                  />
+                  <MetricCard
+                    label="Free Cash"
+                    value={`${fmt(engine.freeCash)}/ month`}
+                    subtext="EMI + Expenses + Invest"
+                  />
+                </div>
+                
+                <CoachInsightCard insight={engine.trustMsg} />
               </div>
 
-              {/* Free cash banner */}
-              {engine.isNegative ? (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 shadow-sm">
-                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                  <p className="text-sm font-medium text-red-700">{engine.trustMsg}</p>
-                </div>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                  <div className="relative">
-                    <p className="text-[11px] uppercase tracking-widest text-slate-500 font-bold mb-1">Free Cash Available</p>
-                    <p className="text-3xl font-black text-slate-900 tabular-nums tracking-tight">
-                      ₹<AnimNum value={engine.freeCash} />
-                      <span className="text-base font-medium text-slate-400 ml-1.5">/ month</span>
-                    </p>
-                  </div>
-                  <div className="text-right relative">
-                    <p className="text-xs font-semibold text-slate-400">Calculated after</p>
-                    <p className="text-[11px] font-bold text-slate-600 mt-0.5 bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100 inline-block">EMI + Expenses + Invest</p>
-                  </div>
-                </div>
-              )}
-
-              {/* ── ROW 2: Allocation + Pie ── */}
+              {/* ── ZONE 2: The Playground ── */}
               {!engine.isNegative && (
-                <div className="grid md:grid-cols-2 gap-5">
-                  {/* allocation steppers */}
-                  <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Allocation</p>
-                      {overrides && (
-                        <button onClick={() => setOverrides(null)} className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-2 py-1 rounded-md transition-colors">
-                          Reset Default
-                        </button>
-                      )}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {/* Monthly Allocation Card */}
+                  <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Monthly Allocation</h3>
+                      <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-1 rounded-md uppercase tracking-widest">Your Playground</span>
                     </div>
-                    <div className="space-y-1.5 divide-y divide-slate-100">
+                    
+                    <div className="space-y-1 flex-1">
                       <AllocationStepper
-                        label="Loan Prepayment"
+                        label="Emergency Buffer"
+                        value={allocEmergency}
+                        onChange={v => setAllocDirect("emergency", v)}
+                        max={engine.remaining}
+                        color={PIE_COLORS.emergency}
+                      />
+                      <AllocationStepper
+                        label="Loan Optimisation"
                         value={allocLoan}
                         onChange={v => setAllocDirect("loan", v)}
                         max={engine.remaining}
                         color={PIE_COLORS.loan}
                       />
                       <AllocationStepper
-                        label="Investments"
+                        label="Strategic Investments"
                         value={allocInvest}
                         onChange={v => setAllocDirect("invest", v)}
                         max={engine.remaining}
                         color={PIE_COLORS.invest}
                       />
-                      <AllocationStepper
-                        label="Lifestyle"
-                        value={allocLifestyle}
-                        onChange={v => setAllocDirect("lifestyle", v)}
-                        max={engine.remaining}
-                        color={PIE_COLORS.lifestyle}
-                      />
-                      {engine.bigMonthly > 0 && (
-                        <div className="py-2 pt-3 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS.bigexp }} />
-                              <span className="text-sm font-medium text-slate-700">Big Expense Fund</span>
-                            </div>
-                            <span className="text-sm font-semibold text-slate-500 tabular-nums bg-slate-50 px-2 py-0.5 rounded shadow-sm border border-slate-100">
-                              {fmt(engine.bigMonthly)}
-                            </span>
-                          </div>
-                          {engine.bigCapped && hasBigExpense && (
-                            <div className="text-[10px] text-orange-700 font-bold bg-orange-50 p-2.5 rounded-lg border border-orange-100 flex items-start gap-1.5 shadow-sm mt-2">
-                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                              <p>(Capped at 40% of free cash. You can accumulate {fmt(engine.bigMonthly * parseInt(bigMonths))} in {bigMonths} months — {fmt(bigAmount - (engine.bigMonthly * parseInt(bigMonths)))} short of your {fmt(bigAmount)} target.)</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
-                    <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-medium">Total distributed</span>
-                      <span className="text-slate-900 font-black tabular-nums">{fmt(totalAlloc)}</span>
+
+                    <div className="mt-6 pt-5 border-t border-slate-100 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium text-slate-400">Total distributed</span>
+                        <span className="text-sm font-black text-slate-900 tabular-nums">{fmt(allocLoan + allocInvest + allocEmergency)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium text-slate-400">Cash Available for Lifestyle</span>
+                        <span className="text-sm font-black text-slate-900 tabular-nums">{fmt(allocLifestyle)}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* pie chart */}
-                  <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Allocation Split</p>
-                    <div className="h-44 relative">
+                  {/* Allocation Split Card */}
+                  <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col items-center">
+                    <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight self-start mb-6">Allocation Split</h3>
+                    <div className="h-44 w-full relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
                             data={pieData.filter(d => d.value > 0)} 
                             cx="50%" cy="50%" innerRadius={50} outerRadius={78}
-                            paddingAngle={2} dataKey="value" strokeWidth={0} animationDuration={500}
+                            paddingAngle={4} dataKey="value" strokeWidth={0} animationDuration={500}
                           >
                             {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
                           </Pie>
-                          <Tooltip
-                            formatter={(v: number) => fmt(v)}
-                            contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, color: "#0f172a", fontSize: 13, fontWeight: 600, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                          />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="text-center mt-0.5">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plan</p>
-                          <p className="text-lg font-black text-slate-900 tracking-tight">{fmtL(totalAlloc)}</p>
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Plan</p>
+                          <p className="text-lg font-black text-slate-900 tracking-tight">{fmtL(allocLoan + allocInvest + allocEmergency)}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-4 px-2">
-                      {pieData.filter(d => d.value > 0).map(d => (
-                        <div key={d.name} className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
-                          <span className="text-[11px] font-semibold text-slate-600 truncate">{d.name}</span>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-6 w-full">
+                       {pieData.filter(d => d.value > 0).map(d => (
+                         <div key={d.name} className="flex items-center gap-2">
+                           <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{d.name}</span>
+                         </div>
+                       ))}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── ROW 3: Loan Impact + Strategy ── */}
+              {/* ── ZONE 3: Recommendation & Strategies ── */}
               {!engine.isNegative && (
-                <div className="grid md:grid-cols-2 gap-5 mt-4">
-                  {/* Loan Impact - Reusing sophisticated chart */}
-                  <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 flex flex-col">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Loan Impact</p>
-                    <div className="flex-1 mt-1">
-                       <PayoffChart 
-                          original={{
-                            ...engine.without,
-                            schedule: engine.without.schedule
-                          }} 
-                          optimized={{
-                             ...activeWithStrat,
-                             schedule: activeWithStrat.schedule
-                          }} 
-                          symbol="₹" 
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mt-1 pt-4 border-t border-slate-100">
-                      <div className="bg-green-50 rounded-xl p-3 text-center border border-green-100">
-                        <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest mb-1">Years Saved</p>
-                        <p className="text-2xl font-black text-green-600 tabular-nums tracking-tight">-{tenureReduced}</p>
-                      </div>
-                      <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
-                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mb-1">Interest Kept</p>
-                        <p className="text-2xl font-black text-blue-600 tabular-nums tracking-tight">{fmtL(interestSaved)}</p>
-                      </div>
-                    </div>
+                <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Recommendation & Strategies</h3>
+                    <p className="text-xs font-bold text-blue-600 mt-1.5 leading-relaxed">
+                      According to your allocations, we recommend Monthly Prepayments + these investment options
+                    </p>
                   </div>
 
-                  {/* Strategy */}
-                  <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 flex flex-col">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Loan Strategy Details</p>
-                    <div className="space-y-3.5 flex-1">
-                      <StrategyItem
-                        step={1}
-                        title={`Extra EMI: ${fmt(activeExtraEmi)}/mo`}
-                        desc="70% of loan allocation applied monthly as direct principal payment."
-                        color="green"
-                      />
-                      <StrategyItem
-                        step={2}
-                        title={`Lump Sum Reserve: ${fmt(activeLumpSum)}/mo`}
-                        desc="Accumulate remaining 30% for a powerful yearly lump sum prepayment."
-                        color="blue"
-                      />
-                      {hasBigExpense && engine.bigMonthly > 0 && (
-                        <StrategyItem
-                          step={3}
-                          title={`Big Expense Fund: ${fmt(engine.bigMonthly)}/mo`}
-                          desc={`Save ₹${(parseInt(bigMonths) * engine.bigMonthly).toLocaleString("en-IN")} completely liquid over exactly ${bigMonths} months.`}
-                          color="orange"
-                        />
-                      )}
+                  <div className="space-y-4">
+                    {/* Step 1: Loan Strategy */}
+                    <div className="bg-green-50/50 border border-green-100 rounded-2xl p-5 relative overflow-hidden group">
+                      <div className="flex gap-4 relative z-10">
+                        <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">1</div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-black text-slate-900 mb-2">How to finish your loan faster</h4>
+                          <div className="space-y-2.5">
+                            <div className="bg-white/80 p-3 rounded-xl border border-green-100">
+                               <p className="text-[13px] font-black text-slate-900 tracking-tight">Pay {fmt(emi + Math.round(allocLoan * 0.7))} every month</p>
+                               <p className="text-[11px] text-green-700 font-medium mt-0.5">Instead of your usual {fmt(emi)} EMI. This extra {fmt(Math.round(allocLoan * 0.7))} reduces your balance directly.</p>
+                            </div>
+                            <div className="bg-white/80 p-3 rounded-xl border border-green-100">
+                               <p className="text-[13px] font-black text-slate-900 tracking-tight">Save {fmt(Math.round(allocLoan * 0.3))} for a bonus payment</p>
+                               <p className="text-[11px] text-green-700 font-medium mt-0.5">By the end of the year, you'll have {fmt(Math.round(allocLoan * 0.3) * 12)} to pay off a big piece at once.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Trust Msg */}
-                    <div className={`mt-5 p-4 rounded-xl border-l-4 ${engine.isNegative || engine.expensePct > 50 
-                      ? "border-red-400 bg-red-50"
-                      : engine.financialMode === "Strong"
-                      ? "border-green-500 bg-green-50"
-                      : "border-yellow-400 bg-yellow-50"
-                      }`}>
-                      <div className="flex gap-3">
-                        <Shield className={`w-5 h-5 flex-shrink-0 ${engine.isNegative || engine.expensePct > 50 ? "text-red-500" : engine.financialMode === "Strong" ? "text-green-500" : "text-yellow-500"}`} />
-                        <p className={`text-sm font-medium leading-relaxed ${engine.isNegative || engine.expensePct > 50 ? "text-red-700" : "text-slate-700"}`}>{engine.trustMsg}</p>
+                    {/* Step 2: Investment Options */}
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 space-y-5 relative overflow-hidden">
+                      <div className="flex gap-4 relative z-10">
+                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">2</div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-black text-slate-900">Growing your wealth</h4>
+                          <p className="text-[11px] text-blue-700 font-bold mt-1.5 leading-relaxed">
+                            Investing {fmt(allocInvest)} every month. At a standard 12% return, your money could grow to ≈ {fmt(accumulation)} in just one year!
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Fund List - Horizontal Scroll */}
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                         {RECOMMENDATIONS.map(fund => (
+                           <FundCard key={fund.name} fund={fund} />
+                         ))}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Insights & Tips ── */}
+              {/* ── ZONE 4: Long-Term Impact ── */}
               {!engine.isNegative && (
-                <div className="bg-slate-50 border border-slate-200 shadow-sm rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Lightbulb className="w-5 h-5 text-yellow-500" />
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Coach Insights & Tips</p>
+                <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <p className="text-slate-400 font-extrabold text-[10px] uppercase tracking-[0.2em] mb-1">Long-Term Impact</p>
+                    <h2 className="text-slate-900 font-black text-2xl tracking-tight">The Path to Freedom</h2>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-3.5">
-                    <InsightCard
-                      title="Expense Ratio"
-                      value={`${engine.expensePct}% consumed`}
-                      tip={engine.expensePct > 50 ? "Consider cutting costs immediately. This burn rate is severely slowing wealth generation." : "Healthy control on expenses. Keep the burn rate stable."}
-                      type={engine.expensePct > 50 ? "warn" : "ok"}
-                    />
-                    <InsightCard
-                      title="EMI Burden"
-                      value={`${Math.round((emi / income) * 100)}% of income`}
-                      tip={emi / income > 0.4 ? "EMI exceeds 40% of income. Caution with new debt." : "EMI proportion is mathematically manageable."}
-                      type={emi / income > 0.4 ? "warn" : "ok"}
-                    />
-                    <InsightCard
-                      title="Emergency Depth"
-                      value={emergencyFund + " months"}
-                      tip={emergencyFund === "0-1" ? "Pause aggressiveness. Build a 3-month strictly liquid emergency runway first." : "Good safety cushion in place to absorb shocks."}
-                      type={emergencyFund === "0-1" ? "warn" : "ok"}
-                    />
-                    <InsightCard
-                      title="Net Forward Velocity"
-                      value={`Pacing +${fmt(engine.remaining)}/mo`}
-                      tip={`You're successfully driving capital into wealth-generation. Strategy aligns with metrics.`}
-                      type="ok"
-                    />
+
+                  {/* The Path to Freedom Graph */}
+                  <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-inner relative overflow-hidden h-[340px]">
+                    <div className="absolute top-6 left-8 z-10 max-w-[200px]">
+                      <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                        Look at that gap — that's money you're keeping. The <span className="text-green-600 font-bold">green line</span> is your smarter path.
+                      </p>
+                    </div>
+                    <div className="w-full h-[110%] mt-4">
+                      <PayoffChart 
+                        original={{ ...engine.without, schedule: engine.without.schedule }} 
+                        optimized={{ ...activeWithStrat, schedule: activeWithStrat.schedule }} 
+                        symbol="₹" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Impact Metric Cards */}
+                  <div className="space-y-3">
+                    <div className="bg-green-50/40 border border-green-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Tenure Reduced</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">{tenureReduced} years</p>
+                    </div>
+
+                    <div className="bg-blue-50/40 border border-blue-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Interest Saved</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">{fmt(interestSaved)}</p>
+                    </div>
+
+                    <div className="bg-red-50/40 border border-red-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Investments</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">{fmt(accumulation)}</p>
+                      <p className="text-[11px] text-slate-500 font-medium mt-1">If invested in growth funds (12% avg return)</p>
+                    </div>
                   </div>
                 </div>
               )}
