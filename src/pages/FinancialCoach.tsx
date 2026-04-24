@@ -246,9 +246,14 @@ export default function FinancialCoach() {
   const engine = useMemo(() => {
     try {
       const totalOut = (Number(expenses) || 0) + (Number(obligations) || 0) + (Number(emi) || 0);
-      const expensePct = Math.round(((expenses + obligations) / (income || 1)) * 100);
-      const freeCash = income - totalOut;
+      const expensePct = Math.round(((Number(expenses) + Number(obligations)) / (Number(income) || 1)) * 100);
+      const freeCash = (Number(income) || 0) - totalOut;
       const isNegative = freeCash <= 0;
+
+      // New: Dynamic Lifestyle Floor (5-15% based on surplus)
+      const lifestylePct = freeCash < 20000 ? 0.05 : freeCash < 50000 ? 0.10 : 0.15;
+      const lifestyleFloor = Math.round(freeCash * lifestylePct);
+      const surplusForAlloc = Math.max(0, freeCash - lifestyleFloor);
 
       const remainingTenure = Math.max(0, tenure - yearsPassed);
       const isLateStage = remainingTenure <= 3;
@@ -279,7 +284,7 @@ export default function FinancialCoach() {
           bigMonthly = raw;
         }
       }
-      const remaining = Math.max(0, freeCash - (bigMonthly || 0));
+      const remaining = Math.max(0, surplusForAlloc - (bigMonthly || 0));
 
       const financialMode =
         safetyLevel === "HIGH" && expensePct < 50 && (emi / income) < 0.4 ? "Strong" :
@@ -338,7 +343,7 @@ export default function FinancialCoach() {
         emergencyAllocRaw += diversion;
       }
 
-      const lifestyleAllocRaw = Math.max(0, freeCash - emergencyAllocRaw - loanAllocRaw - investAllocRaw - bigMonthlyFinal);
+      const lifestyleAllocRaw = Math.max(lifestyleFloor, freeCash - emergencyAllocRaw - loanAllocRaw - investAllocRaw - bigMonthlyFinal);
 
       const trustMsg =
         isNegative ? "Your current expenses exceed income. We can't optimize negative cash." :
@@ -821,13 +826,29 @@ export default function FinancialCoach() {
                           color="#3B82F6"
                         />
 
-                        {engine.bigMonthly > 0 && (
-                          <div className="flex justify-between items-center px-4 py-3 bg-orange-50/50 rounded-2xl border border-orange-100/50 mt-1">
-                             <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 rounded-full bg-orange-500" />
-                               <span className="text-xs font-bold text-slate-600">Upcoming Goal Fund</span>
+                        {/* Upcoming Goal Fund (Priority) */}
+                        {hasBigExpense && (
+                          <div className="pt-2 border-t border-slate-100">
+                             <div className="flex items-center justify-between py-3 opacity-80">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 bg-orange-500" />
+                                  <div>
+                                    <span className="text-sm font-bold text-slate-700">Upcoming Goal Fund</span>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Capped at 60% of surplus</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                  <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
+                                    <Lock className="w-3.5 h-3.5 text-slate-300" />
+                                  </div>
+                                  <div className="w-24 h-8 text-slate-400 font-black text-sm text-center flex items-center justify-center tabular-nums">
+                                    {fmt(engine.bigMonthly)}
+                                  </div>
+                                  <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
+                                    <Lock className="w-3.5 h-3.5 text-slate-300" />
+                                  </div>
+                                </div>
                              </div>
-                             <span className="text-xs font-black text-slate-900">{fmt(engine.bigMonthly)}</span>
                           </div>
                         )}
                       </div>
@@ -945,8 +966,16 @@ export default function FinancialCoach() {
                               <p className={`text-[11px] font-bold leading-relaxed transition-colors ${engine.isSafetyBridge ? "text-red-700" : "text-orange-700"}`}>
                                 {engine.isSafetyBridge 
                                   ? `We've slowed this down to ${fmt(engine.bigMonthly)}/mo to build your safety net first. Safety is non-negotiable.` 
-                                  : `Save ${fmt(engine.bigMonthly)} every month for exactly ${bigMonths} months. This stays 100% safe.`}
+                                  : `Save ${fmt(engine.bigMonthly)} every month for exactly ${bigMonths} months. (Total: ${fmt(Number(bigAmount) || 0)})`}
                               </p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${engine.isSafetyBridge ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
+                                  Target: {fmt(Number(bigAmount) || 0)}
+                                </span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${engine.isSafetyBridge ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
+                                  Cap: 60% of Surplus
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
