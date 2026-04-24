@@ -29,6 +29,10 @@ function calcEMI(principal: number, annualRate: number, years: number) {
 }
 
 function simulateLoan(principal: number, annualRate: number, emi: number, extraMonthly: number) {
+  // Strict NaN/Infinity check
+  if (isNaN(principal) || isNaN(annualRate) || isNaN(emi) || isNaN(extraMonthly) || emi <= 0) {
+    return { months: 0, tenure: 0, totalInterest: 0, schedule: [] };
+  }
   const r = annualRate / 100 / 12;
   let balance = principal;
   let totalInterest = 0;
@@ -235,107 +239,140 @@ export default function FinancialCoach() {
   const [hasBigExpense, setHasBigExpense] = useState(false);
   const [bigAmount, setBigAmount] = useState(500000);
   const [bigMonths, setBigMonths] = useState("12");
+  const [bigLabel, setBigLabel] = useState("");
 
   /* ── engine ── */
+  /* ── engine ── */
   const engine = useMemo(() => {
-    const totalOut = expenses + obligations + emi;
-    const expensePct = Math.round(((expenses + obligations) / income) * 100);
-    const freeCash = income - totalOut;
-    const isNegative = freeCash <= 0;
+    try {
+      const totalOut = (Number(expenses) || 0) + (Number(obligations) || 0) + (Number(emi) || 0);
+      const expensePct = Math.round(((expenses + obligations) / (income || 1)) * 100);
+      const freeCash = income - totalOut;
+      const isNegative = freeCash <= 0;
 
-    let bigMonthly = 0;
-    let bigCapped = false;
-    if (hasBigExpense) {
-      const raw = Math.round(bigAmount / parseInt(bigMonths));
-      const cap = Math.round(freeCash * 0.4);
-      if (raw > cap) {
-        bigMonthly = cap;
-        bigCapped = true;
-      } else {
-        bigMonthly = raw;
+      const remainingTenure = Math.max(0, tenure - yearsPassed);
+      const isLateStage = remainingTenure <= 3;
+      const safetyLevel =
+        emergencyFund === "6+" ? "HIGH" :
+          emergencyFund === "3-6" ? "MEDIUM" : "LOW";
+      
+      const progressPct = (yearsPassed / (tenure || 1)) * 100;
+
+      let bigMonthly = 0;
+      let bigCapped = false;
+      let isSafetyBridge = false;
+
+      if (hasBigExpense) {
+        const amount = Number(bigAmount) || 0;
+        const months = Math.max(1, parseInt(bigMonths) || 1);
+        const raw = Math.round(amount / months);
+        const cap = Math.round(freeCash * 0.6); 
+
+        if (safetyLevel === "LOW") {
+          isSafetyBridge = true;
+        }
+
+        if (raw > cap) {
+          bigMonthly = cap;
+          bigCapped = true;
+        } else {
+          bigMonthly = raw;
+        }
       }
-    }
-    const remaining = Math.max(0, freeCash - bigMonthly);
+      const remaining = Math.max(0, freeCash - (bigMonthly || 0));
 
-    const remainingTenure = Math.max(0, tenure - yearsPassed);
-    const isLateStage = remainingTenure <= 3;
-    const safetyLevel =
-      emergencyFund === "6+" ? "HIGH" :
-        emergencyFund === "3-6" ? "MEDIUM" : "LOW";
+      const financialMode =
+        safetyLevel === "HIGH" && expensePct < 50 && (emi / income) < 0.4 ? "Strong" :
+          safetyLevel !== "LOW" && expensePct <= 50 ? "Moderate" : "Weak";
 
-    const financialMode =
-      safetyLevel === "HIGH" && expensePct < 50 && (emi / income) < 0.4 ? "Strong" :
-        safetyLevel !== "LOW" && expensePct <= 50 ? "Moderate" : "Weak";
+      // DECISION LOGIC: 4-Quarter Matrix
+      let emergencyP = 0, lP = 0, iP = 0;
+      let stageName = "";
 
-    const progressPct = (yearsPassed / tenure) * 100;
-    
-    // DECISION LOGIC: 4-Quarter Matrix
-    let emergencyP = 0, lP = 0, iP = 0;
-    let stageName = "";
-
-    if (safetyLevel === "LOW") {
-      stageName = "Safety First";
-      emergencyP = 80;
-      lP = 10;
-      iP = 10;
-    } else {
-      if (progressPct <= 25) {
-        stageName = "Q1: Interest Defense";
-        lP = riskAppetite === "Aggressive" ? 60 : 75;
-        iP = 100 - lP;
-        emergencyP = 0;
-      } else if (progressPct <= 50) {
-        stageName = "Q2: Balanced Growth";
-        lP = riskAppetite === "Aggressive" ? 40 : 50;
-        iP = 100 - lP;
-        emergencyP = 0;
-      } else if (progressPct <= 75) {
-        stageName = "Q3: Growth Pivot";
-        lP = riskAppetite === "Aggressive" ? 15 : 25;
-        iP = 100 - lP;
-        emergencyP = 0;
+      if (safetyLevel === "LOW") {
+        stageName = "Safety First";
+        emergencyP = 80;
+        lP = 10;
+        iP = 10;
       } else {
-        stageName = "Q4: Wealth Harvest";
-        lP = 0;
-        iP = 100;
-        emergencyP = 0;
+        if (progressPct <= 25) {
+          stageName = "Q1: Interest Defense";
+          lP = riskAppetite === "Aggressive" ? 60 : 75;
+          iP = 100 - lP;
+          emergencyP = 0;
+        } else if (progressPct <= 50) {
+          stageName = "Q2: Balanced Growth";
+          lP = riskAppetite === "Aggressive" ? 40 : 50;
+          iP = 100 - lP;
+          emergencyP = 0;
+        } else if (progressPct <= 75) {
+          stageName = "Q3: Growth Pivot";
+          lP = riskAppetite === "Aggressive" ? 15 : 25;
+          iP = 100 - lP;
+          emergencyP = 0;
+        } else {
+          stageName = "Q4: Wealth Harvest";
+          lP = 0;
+          iP = 100;
+          emergencyP = 0;
+        }
       }
-    }
 
-    // Apply MEDIUM safety adjustment (divert some to emergency)
-    if (safetyLevel === "MEDIUM" && progressPct <= 75) {
-       const diversion = 20;
-       emergencyP = diversion;
-       lP = Math.max(0, lP - (diversion / 2));
-       iP = Math.max(0, iP - (diversion / 2));
-    }
+      // Apply MEDIUM safety adjustment (divert some to emergency)
+      if (safetyLevel === "MEDIUM" && progressPct <= 75) {
+         const diversion = 20;
+         emergencyP = diversion;
+         lP = Math.max(0, lP - (diversion / 2));
+         iP = Math.max(0, iP - (diversion / 2));
+      }
 
-    const emergencyAllocRaw = Math.round(remaining * (emergencyP / 100));
-    const loanAllocRaw = Math.round(remaining * (lP / 100));
-    const investAllocRaw = Math.round(remaining * (iP / 100));
-    const lifestyleAllocRaw = Math.max(0, remaining - emergencyAllocRaw - loanAllocRaw - investAllocRaw);
+      let emergencyAllocRaw = Math.round(remaining * (emergencyP / 100)) || 0;
+      let loanAllocRaw = Math.round(remaining * (lP / 100)) || 0;
+      let investAllocRaw = Math.round(remaining * (iP / 100)) || 0;
 
-    const trustMsg =
-      isNegative ? "Your current expenses exceed income. We can't optimize negative cash." :
-        expensePct > 50 ? "You're burning over half your income just to exist. Enjoy the lifestyle, but your future self is going to have to work forever." :
-        safetyLevel === "LOW" ? "Your priority should be building an emergency fund. We've diverted your surplus there." :
-        progressPct > 75 ? "You're in the final stretch! Redirecting all surplus to wealth building as interest savings are now minimal." :
-        progressPct > 50 ? "Strategic Pivot: Interest costs are now lower than principal. Focusing heavily on equity growth." :
+      let bigMonthlyFinal = bigMonthly || 0;
+
+      if (isSafetyBridge) {
+        const diversion = Math.round(bigMonthlyFinal * 0.5);
+        bigMonthlyFinal = bigMonthlyFinal - diversion;
+        emergencyAllocRaw += diversion;
+      }
+
+      const lifestyleAllocRaw = Math.max(0, freeCash - emergencyAllocRaw - loanAllocRaw - investAllocRaw - bigMonthlyFinal);
+
+      const trustMsg =
+        isNegative ? "Your current expenses exceed income. We can't optimize negative cash." :
+          isSafetyBridge ? `⚠️ Risk Warning: You are racing toward a ${fmt(Number(bigAmount) || 0)} goal without a safety net. We've triggered the 'Safety Bridge' strategy...` :
+          expensePct > 50 ? "You're burning over half your income just to exist. Enjoy the lifestyle, but your future self is going to have to work forever." :
+          safetyLevel === "LOW" ? "Your priority should be building an emergency fund. We've diverted your surplus there." :
+          progressPct > 75 ? "You're in the final stretch! Redirecting all surplus to wealth building as interest savings are now minimal." :
+          progressPct > 50 ? "Strategic Pivot: Interest costs are now lower than principal. Focusing heavily on equity growth." :
           financialMode === "Strong" ? `Excellent position in ${stageName} phase. Balancing payoff and growth.` :
-            `Balanced approach for ${stageName} phase.`;
+          `Balanced approach for ${stageName} phase.`;
 
-    return {
-      freeCash, isNegative, remaining, expensePct, safetyLevel,
-      bigMonthly, bigCapped, financialMode,
-      remainingTenure, isLateStage, progressPct, stageName,
-      allocEmergencyRaw: emergencyAllocRaw,
-      allocLoanRaw: loanAllocRaw, 
-      allocInvestRaw: investAllocRaw, 
-      allocLifestyleRaw: lifestyleAllocRaw,
-      totalOutgoing: expenses + obligations + emi,
-      trustMsg,
-      without: simulateLoan(principal, rate, emi, 0)
-    };
+      return {
+        freeCash, isNegative, remaining, expensePct, safetyLevel,
+        bigMonthly: bigMonthlyFinal, bigCapped, isSafetyBridge, financialMode,
+        remainingTenure, isLateStage, progressPct, stageName,
+        allocEmergencyRaw: emergencyAllocRaw,
+        allocLoanRaw: loanAllocRaw, 
+        allocInvestRaw: investAllocRaw, 
+        allocLifestyleRaw: lifestyleAllocRaw,
+        totalOutgoing: (Number(expenses) || 0) + (Number(obligations) || 0) + (Number(emi) || 0),
+        trustMsg,
+        without: simulateLoan(principal, rate, emi, 0)
+      };
+    } catch (e) {
+      console.error("Engine failure:", e);
+      return {
+        freeCash: 0, isNegative: false, remaining: 0, expensePct: 0, safetyLevel: "MEDIUM",
+        bigMonthly: 0, bigCapped: false, isSafetyBridge: false, financialMode: "Moderate",
+        remainingTenure: 0, isLateStage: false, progressPct: 0, stageName: "Safe Mode",
+        allocEmergencyRaw: 0, allocLoanRaw: 0, allocInvestRaw: 0, allocLifestyleRaw: 0,
+        totalOutgoing: 0, trustMsg: "Calculating...",
+        without: { months: 0, tenure: 0, totalInterest: 0, schedule: [] }
+      };
+    }
   }, [principal, rate, tenure, yearsPassed, emi, income, expenses, obligations, emergencyFund, riskAppetite, hasBigExpense, bigAmount, bigMonths]);
 
 
@@ -343,17 +380,17 @@ export default function FinancialCoach() {
   const [overrides, setOverrides] = useState<{ loan: number; invest: number; emergency: number } | null>(null);
   useEffect(() => { setOverrides(null); }, [engine.allocLoanRaw, engine.allocInvestRaw, engine.allocEmergencyRaw]);
 
-  const allocLoan = overrides?.loan ?? engine.allocLoanRaw;
-  const allocInvest = overrides?.invest ?? engine.allocInvestRaw;
-  const allocEmergency = overrides?.emergency ?? engine.allocEmergencyRaw;
-  const allocLifestyle = Math.max(0, engine.remaining - allocLoan - allocInvest - allocEmergency);
+  const allocLoan = Number(overrides?.loan ?? engine.allocLoanRaw) || 0;
+  const allocInvest = Number(overrides?.invest ?? engine.allocInvestRaw) || 0;
+  const allocEmergency = Number(overrides?.emergency ?? engine.allocEmergencyRaw) || 0;
+  const allocLifestyle = Math.max(0, (engine.remaining || 0) - allocLoan - allocInvest - allocEmergency - (engine.bigMonthly || 0));
 
   // React to sliders natively setting strategy
-  const activeExtraEmi = Math.round(allocLoan * 0.7);
-  const activeLumpSum = allocLoan - activeExtraEmi;
+  const activeExtraEmi = Math.round(allocLoan * 0.7) || 0;
+  const activeLumpSum = Math.max(0, allocLoan - activeExtraEmi) || 0;
   const activeWithStrat = useMemo(() => simulateLoan(principal, rate, emi, activeExtraEmi), [principal, rate, emi, activeExtraEmi]);
-  const interestSaved = engine.without.totalInterest - activeWithStrat.totalInterest;
-  const tenureReduced = Math.round((engine.without.tenure - activeWithStrat.tenure) * 10) / 10;
+  const interestSaved = Math.max(0, (engine.without?.totalInterest || 0) - (activeWithStrat?.totalInterest || 0));
+  const tenureReduced = Math.max(0, Math.round(((engine.without?.tenure || 0) - (activeWithStrat?.tenure || 0)) * 10) / 10);
 
   const setAllocDirect = useCallback((key: "loan" | "invest" | "emergency", val: number) => {
     const cur = overrides ?? { loan: engine.allocLoanRaw, invest: engine.allocInvestRaw, emergency: engine.allocEmergencyRaw };
@@ -421,12 +458,12 @@ export default function FinancialCoach() {
     bigexp: "#F97316",
   };
   const pieData = [
-    { name: "Emergency Fund", value: allocEmergency, color: PIE_COLORS.emergency },
-    { name: "Loan Prepayment", value: allocLoan, color: PIE_COLORS.loan },
-    { name: "Investments", value: allocInvest, color: PIE_COLORS.invest },
-    { name: "Lifestyle", value: allocLifestyle, color: PIE_COLORS.lifestyle },
-    ...(engine.bigMonthly > 0 ? [{ name: "Big Expense Fund", value: engine.bigMonthly, color: PIE_COLORS.bigexp }] : []),
-  ];
+    { name: "Emergency Fund", value: Math.max(0, Number(allocEmergency) || 0), color: PIE_COLORS.emergency },
+    { name: "Loan Prepayment", value: Math.max(0, Number(allocLoan) || 0), color: PIE_COLORS.loan },
+    { name: "Investments", value: Math.max(0, Number(allocInvest) || 0), color: PIE_COLORS.invest },
+    { name: "Lifestyle", value: Math.max(0, Number(allocLifestyle) || 0), color: PIE_COLORS.lifestyle },
+    ...((engine?.bigMonthly || 0) > 0 ? [{ name: "Big Expense Fund", value: Number(engine.bigMonthly), color: PIE_COLORS.bigexp }] : []),
+  ].filter(d => d.value > 0);
 
   /* Unlock report */
   const unlockReport = () => {
@@ -635,6 +672,16 @@ export default function FinancialCoach() {
                         exit={{ opacity: 0, height: 0 }} className="overflow-hidden"
                       >
                         <div className="space-y-4 pt-1">
+                          <div className="space-y-1.5">
+                             <p className="text-xs text-slate-500 font-medium">Goal Name</p>
+                             <input 
+                               type="text" 
+                               value={bigLabel} 
+                               onChange={(e) => setBigLabel(e.target.value)}
+                               placeholder="e.g. Wedding, Car, Travel"
+                               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                             />
+                          </div>
                           <LabeledSlider label="Amount needed" display={fmt(bigAmount)} value={bigAmount} onDirectChange={setBigAmount}>
                             <Slider value={[bigAmount]} min={50000} max={2000000} step={10000}
                               onValueChange={([v]) => setBigAmount(v)} />
@@ -643,7 +690,7 @@ export default function FinancialCoach() {
                             <p className="text-xs text-slate-500 mb-2">Timeline</p>
                             <Chips options={["3", "6", "12", "24"]} value={bigMonths} onChange={setBigMonths} />
                             <p className="text-xs text-slate-400 mt-1.5">
-                              ≈ {fmt(Math.round(bigAmount / parseInt(bigMonths)))} / month
+                               ≈ {fmt(Math.round(bigAmount / (parseInt(bigMonths) || 1)))} / month
                             </p>
                           </div>
                         </div>
@@ -767,13 +814,23 @@ export default function FinancialCoach() {
                         color={PIE_COLORS.loan}
                       />
                       <AllocationStepper
-                        label="Strategic Investments"
-                        value={allocInvest}
-                        onChange={v => setAllocDirect("invest", v)}
-                        max={engine.remaining}
-                        color={PIE_COLORS.invest}
-                      />
-                    </div>
+                          label="Strategic Investments"
+                          value={allocInvest}
+                          onChange={(v) => setAllocDirect("invest", v)}
+                          max={engine.remaining}
+                          color="#3B82F6"
+                        />
+
+                        {engine.bigMonthly > 0 && (
+                          <div className="flex justify-between items-center px-4 py-3 bg-orange-50/50 rounded-2xl border border-orange-100/50 mt-1">
+                             <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full bg-orange-500" />
+                               <span className="text-xs font-bold text-slate-600">Upcoming Goal Fund</span>
+                             </div>
+                             <span className="text-xs font-black text-slate-900">{fmt(engine.bigMonthly)}</span>
+                          </div>
+                        )}
+                      </div>
 
                     <div className="mt-6 pt-5 border-t border-slate-100 space-y-3">
                       <div className="flex justify-between items-center">
@@ -873,6 +930,27 @@ export default function FinancialCoach() {
                            ))}
                         </div>
                       </div>
+
+                      {/* Step 3: Big Goal Fund (Conditional) */}
+                      {hasBigExpense && (
+                         <div className={`border-2 rounded-2xl p-5 relative overflow-hidden transition-all ${engine.isSafetyBridge ? "bg-red-50 border-red-200" : "bg-orange-50/50 border-orange-100"}`}>
+                          <div className="flex gap-4 relative z-10">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm transition-colors ${engine.isSafetyBridge ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"}`}>
+                              {engine.isSafetyBridge ? <AlertTriangle className="w-5 h-5" /> : "3"}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-sm font-black text-slate-900 mb-1">
+                                {engine.isSafetyBridge ? "Safety Bridge: " : ""}Your "{bigLabel || "Future"}" Goal
+                              </h4>
+                              <p className={`text-[11px] font-bold leading-relaxed transition-colors ${engine.isSafetyBridge ? "text-red-700" : "text-orange-700"}`}>
+                                {engine.isSafetyBridge 
+                                  ? `We've slowed this down to ${fmt(engine.bigMonthly)}/mo to build your safety net first. Safety is non-negotiable.` 
+                                  : `Save ${fmt(engine.bigMonthly)} every month for exactly ${bigMonths} months. This stays 100% safe.`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
