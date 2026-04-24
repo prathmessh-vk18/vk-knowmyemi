@@ -15,6 +15,7 @@ interface PayoffChartProps {
   original: StrategyResult;
   optimized: StrategyResult | null;
   symbol: string;
+  hideHeader?: boolean;
 }
 
 function formatCompact(value: number, symbol: string): string {
@@ -24,7 +25,7 @@ function formatCompact(value: number, symbol: string): string {
   return `${symbol}${value.toFixed(0)}`;
 }
 
-export function PayoffChart({ original, optimized, symbol }: PayoffChartProps) {
+export function PayoffChart({ original, optimized, symbol, hideHeader }: PayoffChartProps) {
   const maxMonths = original.months;
   const data: { year: number; original: number; optimized?: number }[] = [];
 
@@ -52,22 +53,19 @@ export function PayoffChart({ original, optimized, symbol }: PayoffChartProps) {
     ? Math.ceil(optimized.months / 12)
     : null;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="glass-card rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4"
-    >
-      <div className="space-y-1">
-        <h3 className="text-base sm:text-lg font-semibold text-foreground">Your road to ₹0 🏁</h3>
-        <p className="text-[10px] sm:text-xs text-muted-foreground">
-          {optimized
-            ? "Look at that gap — that's money you're keeping. The green line is your smarter path."
-            : "This is how your balance drops over time. Enable strategies to see a faster path!"}
-        </p>
-      </div>
-      <div className="h-[240px] sm:h-[280px] w-full">
+  const content = (
+    <>
+      {!hideHeader && (
+        <div className="space-y-1">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">Your road to ₹0 🏁</h3>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {optimized
+              ? "Look at that gap — that's money you're keeping. The green line is your smarter path."
+              : "This is how your balance drops over time. Enable strategies to see a faster path!"}
+          </p>
+        </div>
+      )}
+      <div className={hideHeader ? "h-full w-full" : "h-[240px] sm:h-[280px] w-full"}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
             <XAxis
@@ -136,6 +134,19 @@ export function PayoffChart({ original, optimized, symbol }: PayoffChartProps) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </>
+  );
+
+  if (hideHeader) return <div className="h-full w-full">{content}</div>;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="glass-card rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4"
+    >
+      {content}
     </motion.div>
   );
 }

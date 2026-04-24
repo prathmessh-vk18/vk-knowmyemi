@@ -402,7 +402,7 @@ export default function FinancialCoach() {
 
   function FundCard({ fund }: { fund: typeof RECOMMENDATIONS[0] }) {
     return (
-      <a href={fund.url} target="_blank" rel="noopener noreferrer" className="block p-4 border border-slate-100 rounded-xl hover:border-blue-200 transition-colors bg-slate-50/50 hover:bg-blue-50/30">
+      <a href={fund.url} target="_blank" rel="noopener noreferrer" className="block p-4 border border-slate-100 rounded-xl hover:border-blue-200 transition-colors bg-white hover:bg-blue-50/30">
         <div className="flex justify-between items-start mb-1">
           <h4 className="font-semibold text-slate-900 text-sm">{fund.name}</h4>
           <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{fund.type}</span>
@@ -821,104 +821,101 @@ export default function FinancialCoach() {
                 </div>
               )}
 
-              {/* ── ZONE 3: Recommendation & Strategies ── */}
-              {!engine.isNegative && (
-                <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6">
-                  <div>
-                    <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Recommendation & Strategies</h3>
-                    <p className="text-xs font-bold text-blue-600 mt-1.5 leading-relaxed">
-                      According to your allocations, we recommend Monthly Prepayments + these investment options
-                    </p>
-                  </div>
+              {/* ── ZONE 3 & 4: side-by-side layout ── */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* ── ZONE 3: Recommendation & Strategies ── */}
+                {!engine.isNegative && (
+                  <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6 flex flex-col">
+                    <div>
+                      <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Recommendation & Strategies</h3>
+                      <p className="text-xs font-bold text-blue-600 mt-1.5 leading-relaxed">
+                        According to your allocations, we recommend Monthly Prepayments + these investment options
+                      </p>
+                    </div>
 
-                  <div className="space-y-4">
-                    {/* Step 1: Loan Strategy */}
-                    <div className="bg-green-50/50 border border-green-100 rounded-2xl p-5 relative overflow-hidden group">
-                      <div className="flex gap-4 relative z-10">
-                        <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">1</div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-black text-slate-900 mb-2">How to finish your loan faster</h4>
-                          <div className="space-y-2.5">
-                            <div className="bg-white/80 p-3 rounded-xl border border-green-100">
-                               <p className="text-[13px] font-black text-slate-900 tracking-tight">Pay {fmt(emi + Math.round(allocLoan * 0.7))} every month</p>
-                               <p className="text-[11px] text-green-700 font-medium mt-0.5">Instead of your usual {fmt(emi)} EMI. This extra {fmt(Math.round(allocLoan * 0.7))} reduces your balance directly.</p>
-                            </div>
-                            <div className="bg-white/80 p-3 rounded-xl border border-green-100">
-                               <p className="text-[13px] font-black text-slate-900 tracking-tight">Save {fmt(Math.round(allocLoan * 0.3))} for a bonus payment</p>
-                               <p className="text-[11px] text-green-700 font-medium mt-0.5">By the end of the year, you'll have {fmt(Math.round(allocLoan * 0.3) * 12)} to pay off a big piece at once.</p>
+                    <div className="space-y-4 flex-1">
+                      {/* Step 1: Loan Strategy */}
+                      <div className="bg-green-50/50 border border-green-100 rounded-2xl p-5 relative overflow-hidden group">
+                        <div className="flex gap-4 relative z-10">
+                          <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">1</div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-black text-slate-900 mb-2">How to finish your loan faster</h4>
+                            <div className="space-y-2.5">
+                              <div className="bg-white/80 p-3 rounded-xl border border-green-100">
+                                <p className="text-[13px] font-black text-slate-900 tracking-tight">Pay {fmt(emi + Math.round(allocLoan * 0.7))} every month</p>
+                                <p className="text-[11px] text-green-700 font-medium mt-0.5">Instead of your usual {fmt(emi)} EMI. This extra {fmt(Math.round(allocLoan * 0.7))} reduces your balance directly.</p>
+                              </div>
+                              <div className="bg-white/80 p-3 rounded-xl border border-green-100">
+                                <p className="text-[13px] font-black text-slate-900 tracking-tight">Save {fmt(Math.round(allocLoan * 0.3))} for a bonus payment</p>
+                                <p className="text-[11px] text-green-700 font-medium mt-0.5">By the end of the year, you'll have {fmt(Math.round(allocLoan * 0.3) * 12)} to pay off a big piece at once.</p>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Step 2: Investment Options */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 space-y-5 relative overflow-hidden">
-                      <div className="flex gap-4 relative z-10">
-                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">2</div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-black text-slate-900">Growing your wealth</h4>
-                          <p className="text-[11px] text-blue-700 font-bold mt-1.5 leading-relaxed">
-                            Investing {fmt(allocInvest)} every month. At a standard 12% return, your money could grow to ≈ {fmt(accumulation)} in just one year!
-                          </p>
+                      {/* Step 2: Investment Options */}
+                      <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 space-y-5 relative overflow-hidden">
+                        <div className="flex gap-4 relative z-10">
+                          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 font-black text-sm shadow-sm">2</div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-black text-slate-900">Growing your wealth</h4>
+                            <p className="text-[11px] text-blue-700 font-bold mt-1.5 leading-relaxed">
+                              Investing {fmt(allocInvest)} every month. At a standard 12% return, your money could grow to ≈ {fmt(accumulation)} in just one year!
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Fund List - Vertical for side-by-side layout */}
+                        <div className="flex flex-col gap-2">
+                           {RECOMMENDATIONS.map(fund => (
+                             <FundCard key={fund.name} fund={fund} />
+                           ))}
                         </div>
                       </div>
-
-                      {/* Fund List - Horizontal Scroll */}
-                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-                         {RECOMMENDATIONS.map(fund => (
-                           <FundCard key={fund.name} fund={fund} />
-                         ))}
-                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ── ZONE 4: Long-Term Impact ── */}
-              {!engine.isNegative && (
-                <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6">
-                  <div>
-                    <p className="text-slate-400 font-extrabold text-[10px] uppercase tracking-[0.2em] mb-1">Long-Term Impact</p>
-                    <h2 className="text-slate-900 font-black text-2xl tracking-tight">The Path to Freedom</h2>
-                  </div>
-
-                  {/* The Path to Freedom Graph */}
-                  <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-inner relative overflow-hidden h-[340px]">
-                    <div className="absolute top-6 left-8 z-10 max-w-[200px]">
-                      <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                        Look at that gap — that's money you're keeping. The <span className="text-green-600 font-bold">green line</span> is your smarter path.
-                      </p>
+                {/* ── ZONE 4: Long-Term Impact ── */}
+                {!engine.isNegative && (
+                  <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6 flex flex-col">
+                    <div>
+                      <p className="text-slate-400 font-extrabold text-[10px] uppercase tracking-[0.2em] mb-1">Long-Term Impact</p>
+                      <h2 className="text-slate-900 font-black text-2xl tracking-tight">The Path to Freedom</h2>
                     </div>
-                    <div className="w-full h-[110%] mt-4">
+
+                    {/* The Path to Freedom Graph */}
+                    <div className="w-full relative h-[300px]">
                       <PayoffChart 
                         original={{ ...engine.without, schedule: engine.without.schedule }} 
                         optimized={{ ...activeWithStrat, schedule: activeWithStrat.schedule }} 
                         symbol="₹" 
+                        hideHeader
                       />
                     </div>
+
+                    {/* Impact Metric Cards - Grid for side-by-side */}
+                    <div className="grid grid-cols-1 gap-3 flex-1">
+                      <div className="bg-green-50/40 border border-green-100 p-4 rounded-2xl">
+                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Tenure Reduced</p>
+                        <p className="text-2xl font-black text-slate-900 tracking-tight">{tenureReduced} years</p>
+                      </div>
+
+                      <div className="bg-blue-50/40 border border-blue-100 p-4 rounded-2xl">
+                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Interest Saved</p>
+                        <p className="text-2xl font-black text-slate-900 tracking-tight">{fmt(interestSaved)}</p>
+                      </div>
+
+                      <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl">
+                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Investments</p>
+                        <p className="text-2xl font-black text-slate-900 tracking-tight">{fmt(accumulation)}</p>
+                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">In 12 months @ 12%</p>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Impact Metric Cards */}
-                  <div className="space-y-3">
-                    <div className="bg-green-50/40 border border-green-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Tenure Reduced</p>
-                      <p className="text-3xl font-black text-slate-900 tracking-tight">{tenureReduced} years</p>
-                    </div>
-
-                    <div className="bg-blue-50/40 border border-blue-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Interest Saved</p>
-                      <p className="text-3xl font-black text-slate-900 tracking-tight">{fmt(interestSaved)}</p>
-                    </div>
-
-                    <div className="bg-red-50/40 border border-red-100 p-6 rounded-3xl group hover:scale-[1.01] transition-transform">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Investments</p>
-                      <p className="text-3xl font-black text-slate-900 tracking-tight">{fmt(accumulation)}</p>
-                      <p className="text-[11px] text-slate-500 font-medium mt-1">If invested in growth funds (12% avg return)</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
           </div>
         </div>
