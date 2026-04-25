@@ -11,7 +11,7 @@ import { Header } from "@/components/Header";
 import {
   Pencil, ChevronLeft, Sparkles, TrendingUp, Shield, Info,
   AlertTriangle, Home, Wallet, Target, Lightbulb, ArrowRight,
-  Plus, Minus, Check, Lock
+  Plus, Minus, Check, Lock, Clock
 } from "lucide-react";
 
 /* ─────────── helpers ─────────── */
@@ -156,6 +156,25 @@ function MetricCard({ label, value, subtext }: { label: string; value: string; s
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
       <p className="text-xl font-black text-slate-900 tracking-tight">{value}</p>
       <p className="text-[10px] text-slate-500 font-medium mt-1 leading-tight">{subtext}</p>
+    </div>
+  );
+}
+
+function ImpactCard({ label, value, subtext, color, icon: Icon }: { label: string; value: string; subtext?: string; color: 'green' | 'blue' | 'rose'; icon: any }) {
+  const styles = {
+    green: "from-emerald-50 to-teal-50 border-emerald-100/60 text-emerald-600",
+    blue: "from-blue-50 to-indigo-50 border-blue-100/60 text-blue-600",
+    rose: "from-rose-50 to-pink-50 border-rose-100/60 text-rose-600",
+  }[color];
+
+  return (
+    <div className={`relative overflow-hidden bg-gradient-to-br ${styles} border p-6 rounded-3xl shadow-sm group hover:shadow-md transition-all duration-500`}>
+      <div className="relative z-10">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1.5">{label}</p>
+        <p className="text-3xl font-black tracking-tighter text-slate-900">{value}</p>
+        {subtext && <p className="text-[11px] font-bold opacity-60 mt-1.5">{subtext}</p>}
+      </div>
+      <Icon className="absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.04] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none" />
     </div>
   );
 }
@@ -1016,23 +1035,31 @@ export default function FinancialCoach() {
                       />
                     </div>
 
-                    {/* Impact Metric Cards - Grid for side-by-side */}
-                    <div className="grid grid-cols-1 gap-3 flex-1">
-                      <div className="bg-green-50/40 border border-green-100 p-4 rounded-2xl">
-                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Tenure Reduced</p>
-                        <p className="text-2xl font-black text-slate-900 tracking-tight">{tenureReduced} years</p>
-                      </div>
+                    {/* Impact Metric Cards - Grid for vertical stacking */}
+                    <div className="grid grid-cols-1 gap-4 flex-1">
+                      <ImpactCard 
+                        label="Tenure Reduced" 
+                        value={`${tenureReduced} years`} 
+                        subtext="Time back in your life"
+                        color="green" 
+                        icon={Clock} 
+                      />
 
-                      <div className="bg-blue-50/40 border border-blue-100 p-4 rounded-2xl">
-                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Interest Saved</p>
-                        <p className="text-2xl font-black text-slate-900 tracking-tight">{fmt(interestSaved)}</p>
-                      </div>
+                      <ImpactCard 
+                        label="Interest Saved" 
+                        value={fmt(interestSaved)} 
+                        subtext="Money back in your pocket"
+                        color="blue" 
+                        icon={Wallet} 
+                      />
 
-                      <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl">
-                        <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Investments</p>
-                        <p className="text-2xl font-black text-slate-900 tracking-tight">{fmt(accumulation)}</p>
-                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">In 12 months @ 12%</p>
-                      </div>
+                      <ImpactCard 
+                        label="Investments" 
+                        value={fmt(accumulation)} 
+                        subtext="In 12 months @ 12%"
+                        color="rose" 
+                        icon={TrendingUp} 
+                      />
                     </div>
                   </div>
                 )}
