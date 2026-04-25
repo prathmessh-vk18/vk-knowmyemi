@@ -218,11 +218,12 @@ export default function FinancialCoach() {
   const urlEmi = parseInt(sp.get("emi") ?? "0");
 
   // Loan details (editable inline - defaults to open if no URL parameters passed)
-  const [loanOpen, setLoanOpen] = useState(!urlPrincipalRaw);
   const [principal, setPrincipal] = useState(urlPrincipal);
   const [rate, setRate] = useState(urlRate);
   const [tenure, setTenure] = useState(urlTenure);
   const [yearsPassed, setYearsPassed] = useState(0);
+
+  const [loanOpen, setLoanOpen] = useState(false); // Default to collapsed if data is fetched
 
   const calcedEmi = useMemo(() => calcEMI(principal, rate, tenure), [principal, rate, tenure]);
   const emi = urlEmi > 0 && !loanOpen ? urlEmi : calcedEmi;
@@ -347,13 +348,13 @@ export default function FinancialCoach() {
 
       const trustMsg =
         isNegative ? "Your current expenses exceed income. We can't optimize negative cash." :
-          isSafetyBridge ? `⚠️ Risk Warning: You are racing toward a ${fmt(Number(bigAmount) || 0)} goal without a safety net. We've triggered the 'Safety Bridge' strategy...` :
-          expensePct > 50 ? "You're burning over half your income just to exist. Enjoy the lifestyle, but your future self is going to have to work forever." :
-          safetyLevel === "LOW" ? "Your priority should be building an emergency fund. We've diverted your surplus there." :
-          progressPct > 75 ? "You're in the final stretch! Redirecting all surplus to wealth building as interest savings are now minimal." :
-          progressPct > 50 ? "Strategic Pivot: Interest costs are now lower than principal. Focusing heavily on equity growth." :
-          financialMode === "Strong" ? `Excellent position in ${stageName} phase. Balancing payoff and growth.` :
-          `Balanced approach for ${stageName} phase.`;
+          isSafetyBridge ? `⚠️ Risk Warning: You are racing toward a ${fmt(Number(bigAmount) || 0)} goal without a safety net. We've triggered the 'Safety Bridge' strategy to protect you.` :
+          expensePct > 50 ? "You're burning over half your income just to exist. Enjoy the lifestyle, but we need to find more breathing room for your future." :
+          safetyLevel === "LOW" ? "Let’s get you protected. Before we worry about the loan, we’re building the cash buffer that lets you sleep well at night." :
+          progressPct > 75 ? "The finish line is in sight! Interest is negligible now, so we're pouring every extra rupee into building your wealth." :
+          progressPct > 50 ? "The pivot point: Your interest costs are now minor. We're shifting focus heavily toward growth to maximize your future." :
+          financialMode === "Strong" ? "You're crushing it. We're destroying that interest early and setting you up for a massive wealth harvest down the road." :
+          "You've got a great rhythm. You're handling your debt responsibly while still making your money work for you.";
 
       return {
         freeCash, isNegative, remaining, expensePct, safetyLevel,
@@ -519,20 +520,30 @@ export default function FinancialCoach() {
                   <motion.div
                     key="summary"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="space-y-2"
+                    className="space-y-4"
                   >
-                    {[
-                      ["Loan Amount", fmt(principal)],
-                      ["Interest Rate (p.a.)", `${rate}%`],
-                      ["Tenure", `${tenure} years`],
-                      ["Years Passed", `${yearsPassed} years`],
-                      ["EMI", fmt(emi)],
-                    ].map(([l, v]) => (
-                      <div key={l} className="flex justify-between items-center">
-                        <span className="text-sm text-slate-500">{l}</span>
-                        <span className="text-sm font-semibold text-slate-900 tabular-nums">{v}</span>
-                      </div>
-                    ))}
+                    <div className="space-y-2 pb-4 border-b border-slate-50">
+                      {[
+                        ["Loan Amount", fmt(principal)],
+                        ["Interest Rate (p.a.)", `${rate}%`],
+                        ["Total Tenure", `${tenure} years`],
+                        ["EMI", fmt(emi)],
+                      ].map(([l, v]) => (
+                        <div key={l} className="flex justify-between items-center">
+                          <span className="text-sm text-slate-500">{l}</span>
+                          <span className="text-sm font-semibold text-slate-900 tabular-nums">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <LabeledSlider 
+                      label="Years Completed" 
+                      display={`${yearsPassed} yrs`} 
+                      value={yearsPassed} 
+                      onDirectChange={setYearsPassed}
+                    >
+                      <Slider value={[yearsPassed]} min={0} max={tenure} step={1} onValueChange={([v]) => setYearsPassed(v)} />
+                    </LabeledSlider>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -549,7 +560,7 @@ export default function FinancialCoach() {
                     <LabeledSlider label="Tenure (years)" display={`${tenure} yrs`} value={tenure} onDirectChange={setTenure}>
                       <Slider value={[tenure]} min={1} max={30} step={1} onValueChange={([v]) => setTenure(v)} />
                     </LabeledSlider>
-                    <LabeledSlider label="Years Passed" display={`${yearsPassed} yrs`} value={yearsPassed} onDirectChange={setYearsPassed}>
+                    <LabeledSlider label="Years Completed" display={`${yearsPassed} yrs`} value={yearsPassed} onDirectChange={setYearsPassed}>
                       <Slider value={[yearsPassed]} min={0} max={tenure} step={1} onValueChange={([v]) => setYearsPassed(v)} />
                     </LabeledSlider>
                     <div className="flex justify-between items-center pt-1 border-t border-slate-100">
@@ -559,6 +570,7 @@ export default function FinancialCoach() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
 
               {activeStep === 1 && (
                 <button
@@ -580,7 +592,6 @@ export default function FinancialCoach() {
                       label="Monthly Income"
                       subtitle="Salary, Rental Income, and others"
                       display={fmt(income)}
-                      badge={`₹${Math.round(income / 1000)}K`}
                       value={income}
                       onDirectChange={setIncome}
                     >
@@ -591,7 +602,7 @@ export default function FinancialCoach() {
                       label="Monthly Expenses"
                       subtitle="Rent, Groceries, Bills, etc."
                       display={fmt(expenses)}
-                      badge={`${Math.round(((expenses + obligations) / income) * 100)}% of income`}
+                      badge={`${Math.round(((expenses + obligations) / income) * 100)}%`}
                       value={expenses}
                       onDirectChange={setExpenses}
                     >
@@ -602,7 +613,7 @@ export default function FinancialCoach() {
                       label="Monthly Obligations"
                       subtitle="EMIs, Subscriptions, Insurance, etc."
                       display={fmt(obligations)}
-                      badge={`${Math.round((obligations / income) * 100)}% of income`}
+                      badge={`${Math.round((obligations / income) * 100)}%`}
                       value={obligations}
                       onDirectChange={setObligations}
                     >
@@ -798,8 +809,8 @@ export default function FinancialCoach() {
                 <div className="grid lg:grid-cols-2 gap-6">
                   {/* Monthly Allocation Card */}
                   <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Monthly Allocation</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Monthly Allocation</p>
                       <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-1 rounded-md uppercase tracking-widest">Your Playground</span>
                     </div>
                     
@@ -829,25 +840,27 @@ export default function FinancialCoach() {
                         {/* Upcoming Goal Fund (Priority) */}
                         {hasBigExpense && (
                           <div className="pt-2 border-t border-slate-100">
-                             <div className="flex items-center justify-between py-3 opacity-80">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 bg-orange-500" />
-                                  <div>
-                                    <span className="text-sm font-bold text-slate-700">Upcoming Goal Fund</span>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Capped at 60% of surplus</p>
+                             <div className="py-3 opacity-80">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 bg-orange-500" />
+                                    <span className="text-sm font-bold text-slate-700">Big Expense Fund</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
+                                      <Lock className="w-3.5 h-3.5 text-slate-300" />
+                                    </div>
+                                    <div className="w-24 h-8 text-slate-400 font-black text-sm text-center flex items-center justify-center tabular-nums">
+                                      {fmt(engine.bigMonthly)}
+                                    </div>
+                                    <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
+                                      <Lock className="w-3.5 h-3.5 text-slate-300" />
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                                  <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
-                                    <Lock className="w-3.5 h-3.5 text-slate-300" />
-                                  </div>
-                                  <div className="w-24 h-8 text-slate-400 font-black text-sm text-center flex items-center justify-center tabular-nums">
-                                    {fmt(engine.bigMonthly)}
-                                  </div>
-                                  <div className="w-8 h-8 rounded-lg bg-white/50 border border-slate-100 flex items-center justify-center">
-                                    <Lock className="w-3.5 h-3.5 text-slate-300" />
-                                  </div>
-                                </div>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-right">
+                                  Capped at 60% of surplus
+                                </p>
                              </div>
                           </div>
                         )}
@@ -867,7 +880,7 @@ export default function FinancialCoach() {
 
                   {/* Allocation Split Card */}
                   <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col items-center">
-                    <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight self-start mb-6">Allocation Split</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 self-start mb-4">Allocation Split</p>
                     <div className="h-44 w-full relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -905,8 +918,8 @@ export default function FinancialCoach() {
                 {!engine.isNegative && (
                   <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-6 flex flex-col">
                     <div>
-                      <h3 className="text-slate-900 font-extrabold text-sm uppercase tracking-tight">Recommendation & Strategies</h3>
-                      <p className="text-xs font-bold text-blue-600 mt-1.5 leading-relaxed">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Recommendation & Strategies</p>
+                      <p className="text-xs font-bold text-slate-900 leading-relaxed">
                         According to your allocations, we recommend Monthly Prepayments + these investment options
                       </p>
                     </div>
@@ -1063,14 +1076,14 @@ function LabeledSlider({ label, subtitle, display, badge, value, onDirectChange,
   const [raw, setRaw] = useState("");
   
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="flex justify-between items-baseline">
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-slate-800">{label}</label>
-          {subtitle && <p className="text-[11px] text-slate-400 font-medium leading-tight mt-0.5">{subtitle}</p>}
+          <label className="text-sm font-black text-slate-700">{label}</label>
+          {subtitle && <p className="text-[11px] text-slate-400 font-bold leading-tight mt-0.5">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2">
-          {badge && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">{badge}</span>}
+          {badge && <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded">{badge}</span>}
           {editing && onDirectChange ? (
               <input
                 autoFocus
