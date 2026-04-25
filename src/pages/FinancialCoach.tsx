@@ -242,7 +242,7 @@ export default function FinancialCoach() {
   const [tenure, setTenure] = useState(urlTenure);
   const [yearsPassed, setYearsPassed] = useState(0);
 
-  const [loanOpen, setLoanOpen] = useState(false); // Default to collapsed if data is fetched
+  const [loanOpen, setLoanOpen] = useState(!urlPrincipalRaw); // Open by default for new users, collapsed for returning users
 
   const calcedEmi = useMemo(() => calcEMI(principal, rate, tenure), [principal, rate, tenure]);
   const emi = urlEmi > 0 && !loanOpen ? urlEmi : calcedEmi;
