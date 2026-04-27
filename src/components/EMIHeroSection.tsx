@@ -166,7 +166,7 @@ export function EMIHeroSection({ onCalculateClick }: EMIHeroSectionProps) {
             variants={itemVariants}
             className="text-lg md:text-xl text-muted-foreground max-w-3xl leading-relaxed"
           >
-            Know My EMI shows your monthly payment, total interest cost, and how to pay it off faster and save money.{" "}
+            Debt Savvy Shine shows your monthly payment, total interest cost, and how to pay it off faster and save money.{" "}
             <span className="font-semibold text-foreground">No jargon, no signup, just clarity.</span>
           </motion.p>
 

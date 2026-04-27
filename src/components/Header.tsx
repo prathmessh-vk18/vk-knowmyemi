@@ -18,7 +18,7 @@ export const Header = () => {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <img src="/icon.png" alt="Know My EMI Logo" className="h-[56px] w-auto drop-shadow-sm" />
+              <img src="/icon.png" alt="Debt Savvy Shine Logo" className="h-[56px] w-auto drop-shadow-sm" />
             </motion.div>
           </Link>
         </div>

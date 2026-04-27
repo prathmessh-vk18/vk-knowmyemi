@@ -10,7 +10,7 @@ interface SEOProps {
 }
 
 export function SEO({
-  title = "Know My EMI - Loan Calculator & Repayment Strategy Tool",
+  title = "Debt Savvy Shine - Advanced Debt Payoff & EMI Strategy Tool",
   description = "Calculate your EMI, understand total interest cost, and discover strategies to pay off your loan faster. No signup required - 100% free loan analysis tool.",
   keywords = "EMI calculator, loan calculator, home loan EMI, personal loan calculator, interest calculator, loan repayment strategy, debt payoff, amortization calculator, India loan calculator",
   canonical = "https://knowmyemi.com/",

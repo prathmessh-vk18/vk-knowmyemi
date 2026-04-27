@@ -43,7 +43,7 @@ export default function HeroSection({ onCTAClick }: HeroSectionProps) {
               Taking a loan? Know exactly what you're getting into.
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Know My EMI shows you your monthly payment, total interest cost, and
+              Debt Savvy Shine shows you your monthly payment, total interest cost, and
               — most importantly — how to pay it off faster and save money. No
               jargon, no signup, just clarity.
             </p>
